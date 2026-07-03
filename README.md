@@ -64,7 +64,7 @@ Specimen Event (LIMS webhook via MCP)
 
 - **Runtime:** Python 3.12, FastAPI, Uvicorn
 - **Orchestration:** LangGraph with `interrupt()` for HITL state management; PostgreSQL checkpointing preserves state across human review delays
-- **Model Layer:** AWS Bedrock — Claude 3.5 Sonnet for exception reasoning; Amazon Titan Embeddings v2 for protocol retrieval
+- **Model-Agnostic Intelligence Layer:** AWS Bedrock / Native APIs. Built to leverage Claude 3.5 Sonnet, Gemini 1.5 Pro, or OpenAI GPT-4o interchangeably. The orchestration layer maps the unified MCP tool schema directly to whichever model is actively serving production traffic. Amazon Titan Embeddings v2 handles protocol retrieval
 - **Knowledge Base:** PostgreSQL 16 with pgvector; stores specimen handling protocols, QC threshold tables, rejection criteria, and retest decision trees
 - **MCP Servers:** LIMS integration and EHR notification are exposed to the agent as standardized Model Context Protocol servers — the orchestrator calls tools, not bespoke SDKs. Adding a new upstream source is a new MCP server, not an orchestrator code change
 - **Infrastructure:** Docker Compose (local), Terraform/AWS Fargate (production) — 100% AWS stack aligned with enterprise security boundaries
@@ -198,10 +198,18 @@ curl -X POST http://localhost:8000/v1/process \
 Copy `.env.example` to `.env` and populate:
 
 ```env
-# AWS Bedrock — required
+# LLM provider — required. One of: bedrock | anthropic | gemini | openai
+LLM_PROVIDER=bedrock
+
+# AWS Bedrock — required (embeddings always use Bedrock, regardless of LLM_PROVIDER)
 AWS_REGION=us-east-1
 BEDROCK_CLAUDE_MODEL_ID=us.anthropic.claude-3-5-sonnet-20241022-v2:0
 BEDROCK_EMBEDDING_MODEL_ID=amazon.titan-embed-text-v2:0
+
+# Anthropic / Gemini / OpenAI — required only if LLM_PROVIDER selects that backend
+ANTHROPIC_API_KEY=
+GEMINI_API_KEY=
+OPENAI_API_KEY=
 
 # PostgreSQL — required
 DATABASE_URL=postgresql+asyncpg://labops:labops@localhost:5432/labops
@@ -225,7 +233,7 @@ HITL_CONFIDENCE_THRESHOLD=0.80
 EMBEDDING_DIMENSIONS=1024
 ```
 
-Startup validation enforces all required fields — the service fails loudly at boot rather than serving wrong results silently.
+Startup validation enforces all required fields — the service fails loudly at boot rather than serving wrong results silently. Switching `LLM_PROVIDER` is the only change required to move the reasoning model between Bedrock, Anthropic, Gemini, and OpenAI — every provider implements the same `invoke(system_prompt, user_message, max_tokens)` interface behind `get_llm_client()`, so `intake_classifier` and `exception_router` never branch on which model is serving traffic.
 
 ---
 

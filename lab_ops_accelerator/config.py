@@ -1,15 +1,42 @@
+from enum import Enum
 from functools import lru_cache
 
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings
 
 
+class LLMProviderName(str, Enum):
+    """Which backend serves the reasoning model. Every provider maps to the same
+    unified tool schema, so the orchestration layer never branches on this value —
+    it's a config switch, not a code path."""
+
+    BEDROCK = "bedrock"
+    ANTHROPIC = "anthropic"
+    GEMINI = "gemini"
+    OPENAI = "openai"
+
+
 class Settings(BaseSettings):
+    # LLM provider selection — reasoning model backend
+    llm_provider: LLMProviderName = LLMProviderName.BEDROCK
+
     # AWS Bedrock
     aws_region: str = "us-east-1"
     bedrock_claude_model_id: str = "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
     bedrock_embedding_model_id: str = "amazon.titan-embed-text-v2:0"
     embedding_dimensions: int = 1024
+
+    # Anthropic — native API (bypasses Bedrock)
+    anthropic_api_key: str = ""
+    anthropic_model_id: str = "claude-3-5-sonnet-20241022"
+
+    # Google Gemini
+    gemini_api_key: str = ""
+    gemini_model_id: str = "gemini-1.5-pro"
+
+    # OpenAI
+    openai_api_key: str = ""
+    openai_model_id: str = "gpt-4o"
 
     # PostgreSQL
     database_url: str
@@ -53,6 +80,17 @@ class Settings(BaseSettings):
             raise RuntimeError(
                 f"Missing required configuration: {', '.join(missing)}. "
                 "Check your .env file."
+            )
+
+        provider_key_field = {
+            LLMProviderName.ANTHROPIC: "anthropic_api_key",
+            LLMProviderName.GEMINI: "gemini_api_key",
+            LLMProviderName.OPENAI: "openai_api_key",
+        }.get(self.llm_provider)
+        if provider_key_field is not None and not getattr(self, provider_key_field):
+            raise RuntimeError(
+                f"LLM_PROVIDER={self.llm_provider.value} requires "
+                f"{provider_key_field.upper()} to be set. Check your .env file."
             )
         return self
 
