@@ -58,7 +58,7 @@ flowchart TD
 
 - **Runtime:** Python 3.12, FastAPI, Uvicorn
 - **Orchestration:** LangGraph with `interrupt()` for HITL state management; PostgreSQL checkpointing preserves state across human review delays
-- **Model-Agnostic Intelligence Layer:** AWS Bedrock / Native APIs. Built to leverage Claude 3.5 Sonnet, Gemini 1.5 Pro, or OpenAI GPT-4o interchangeably. The orchestration layer maps the unified MCP tool schema directly to whichever model is actively serving production traffic. Amazon Titan Embeddings v2 handles protocol retrieval
+- **Model-Agnostic Intelligence Layer:** AWS Bedrock / Native APIs. Built to leverage Claude Sonnet 5, Gemini 2.5 Pro, or OpenAI GPT-5.5 interchangeably. The orchestration layer maps the unified MCP tool schema directly to whichever model is actively serving production traffic. Amazon Titan Embeddings v2 handles protocol retrieval
 - **Knowledge Base:** PostgreSQL 16 with pgvector; stores specimen handling protocols, QC threshold tables, rejection criteria, and retest decision trees
 - **MCP Servers:** LIMS integration and EHR notification are exposed to the agent as standardized Model Context Protocol servers — the orchestrator calls tools, not bespoke SDKs. Adding a new upstream source is a new MCP server, not an orchestrator code change
 - **Infrastructure:** Docker Compose (local), Terraform/AWS Fargate (production) — 100% AWS stack aligned with enterprise security boundaries
@@ -198,7 +198,7 @@ LLM_PROVIDER=bedrock
 
 # AWS Bedrock — required (embeddings always use Bedrock, regardless of LLM_PROVIDER)
 AWS_REGION=us-east-1
-BEDROCK_CLAUDE_MODEL_ID=us.anthropic.claude-3-5-sonnet-20241022-v2:0
+BEDROCK_CLAUDE_MODEL_ID=us.anthropic.claude-sonnet-5
 BEDROCK_EMBEDDING_MODEL_ID=amazon.titan-embed-text-v2:0
 
 # Anthropic / Gemini / OpenAI — required only if LLM_PROVIDER selects that backend
@@ -310,4 +310,4 @@ INTEGRATION=1 pytest tests/test_workflow_integration.py -q
 
 ---
 
-*Stack: Python 3.12 · FastAPI · LangGraph · AWS Bedrock (Claude 3.5 Sonnet + Titan Embeddings v2) · PostgreSQL + pgvector · MCP servers · Prometheus · Grafana · Terraform/AWS Fargate.*
+*Stack: Python 3.12 · FastAPI · LangGraph · AWS Bedrock (Claude Sonnet 5 + Titan Embeddings v2) · PostgreSQL + pgvector · MCP servers · Prometheus · Grafana · Terraform/AWS Fargate.*

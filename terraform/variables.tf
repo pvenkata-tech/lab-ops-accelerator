@@ -24,7 +24,7 @@ variable "container_image" {
 variable "bedrock_claude_model_id" {
   description = "Bedrock model ID for Claude inference"
   type        = string
-  default     = "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
+  default     = "us.anthropic.claude-sonnet-5"
 }
 
 variable "bedrock_embedding_model_id" {

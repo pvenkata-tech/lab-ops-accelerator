@@ -22,21 +22,21 @@ class Settings(BaseSettings):
 
     # AWS Bedrock
     aws_region: str = "us-east-1"
-    bedrock_claude_model_id: str = "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
+    bedrock_claude_model_id: str = "us.anthropic.claude-sonnet-5"
     bedrock_embedding_model_id: str = "amazon.titan-embed-text-v2:0"
     embedding_dimensions: int = 1024
 
     # Anthropic — native API (bypasses Bedrock)
     anthropic_api_key: str = ""
-    anthropic_model_id: str = "claude-3-5-sonnet-20241022"
+    anthropic_model_id: str = "claude-sonnet-5"
 
     # Google Gemini
     gemini_api_key: str = ""
-    gemini_model_id: str = "gemini-1.5-pro"
+    gemini_model_id: str = "gemini-2.5-pro"
 
     # OpenAI
     openai_api_key: str = ""
-    openai_model_id: str = "gpt-4o"
+    openai_model_id: str = "gpt-5.5"
 
     # PostgreSQL
     database_url: str
