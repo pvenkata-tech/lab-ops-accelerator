@@ -29,7 +29,7 @@ def retrieve_protocol(query: str) -> dict:
     body = json.loads(response["body"].read())
     query_embedding = body["embedding"]
 
-    with psycopg.connect(settings.checkpoint_database_url) as conn:
+    with psycopg.connect(settings.checkpoint_database_url, connect_timeout=5) as conn:
         row = conn.execute(
             """
             SELECT id, title, content,

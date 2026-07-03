@@ -80,8 +80,14 @@ def _run_case(case: dict) -> WorkflowState:
     event = SpecimenEvent(**case["specimen_event"])
     state = WorkflowState(specimen_event=event)
 
-    with patch("boto3.client") as mock_boto:
+    with patch("boto3.client") as mock_boto, patch(
+        "lab_ops_accelerator.nodes.qc_evaluator.retrieve_protocol"
+    ) as mock_retrieve:
         mock_boto.return_value = _build_mock_bedrock(case)
+        mock_retrieve.return_value = {
+            "protocol_id": "EVAL-PROTOCOL",
+            "protocol_text": "Mock protocol for evaluation — routing accuracy is under test, not retrieval.",
+        }
         state = classify_intake(state)
         state = evaluate_qc(state)
         state = route_exception(state)
@@ -94,7 +100,6 @@ def _build_mock_bedrock(case: dict):
 
     def invoke_model(**kwargs):
         body = json.loads(kwargs.get("body", "{}"))
-        messages = body.get("messages", [])
         is_embedding = "inputText" in body
 
         if is_embedding:
@@ -104,17 +109,20 @@ def _build_mock_bedrock(case: dict):
                 )
             }
 
-        content = messages[0]["content"] if messages else ""
-        if "exception_type" not in "".join(m.get("content", "") for m in messages):
-            response_text = json.dumps({
-                "exception_type": case.get("expected_exception_type", "unknown"),
-                "reasoning": "mock classification",
-            })
-        else:
+        # The routing system prompt is the only one that mentions "disposition" —
+        # distinguishing on the system prompt (not the user message) is what makes
+        # this reliable, since both calls' user messages are free-form case data.
+        is_routing_call = "disposition" in body.get("system", "")
+        if is_routing_call:
             response_text = json.dumps({
                 "disposition": case["expected_disposition"],
                 "confidence": case.get("mock_confidence", 0.92),
                 "reasoning": "mock routing",
+            })
+        else:
+            response_text = json.dumps({
+                "exception_type": case.get("expected_exception_type", "unknown"),
+                "reasoning": "mock classification",
             })
 
         return {

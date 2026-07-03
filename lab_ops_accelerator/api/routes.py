@@ -76,7 +76,7 @@ async def process_specimen(req: ProcessRequest):
         }
 
     try:
-        state = dispatch_notification(state)
+        state = await dispatch_notification(state)
     except Exception as exc:
         logger.error("Notification dispatch failed: %s", exc)
         raise HTTPException(status_code=500, detail=str(exc))
@@ -112,7 +112,7 @@ async def resume_thread(req: ResumeRequest):
     })
 
     try:
-        state = dispatch_notification(state)
+        state = await dispatch_notification(state)
     except Exception as exc:
         logger.error("Post-HITL dispatch failed for %s: %s", req.thread_id, exc)
         raise HTTPException(status_code=500, detail=str(exc))

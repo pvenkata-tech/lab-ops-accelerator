@@ -2,29 +2,36 @@ from __future__ import annotations
 
 import logging
 
-import httpx
-
 from lab_ops_accelerator.config import get_settings
 from lab_ops_accelerator.graph.state import Disposition, SupervisorDecision, WorkflowState
 from lab_ops_accelerator.observability.metrics import EXCEPTIONS_PROCESSED, SUPERVISOR_OVERRIDES
+from lab_ops_accelerator.tools.mcp_client import call_tool
 
 logger = logging.getLogger(__name__)
 
 
-def dispatch_notification(state: WorkflowState) -> WorkflowState:
-    """Send notifications and update LIMS after disposition is determined."""
+async def dispatch_notification(state: WorkflowState) -> WorkflowState:
+    """Send notifications and update LIMS after disposition is determined.
+
+    Both upstream systems are reached through their MCP servers, not bespoke SDKs — the
+    orchestrator only knows tool names and arguments, so a new upstream source is a new
+    MCP server, not a change here.
+    """
     settings = get_settings()
 
     final_disposition = _resolve_final_disposition(state)
     override_occurred = _check_override(state, final_disposition)
 
-    _update_lims(settings, state, final_disposition)
-    _notify_ehr(settings, state, final_disposition)
+    await _update_lims(settings, state, final_disposition)
+    await _notify_ehr(settings, state, final_disposition)
 
     if override_occurred:
         SUPERVISOR_OVERRIDES.inc()
 
-    EXCEPTIONS_PROCESSED.inc()
+    EXCEPTIONS_PROCESSED.labels(
+        exception_type=state.exception_type.value if state.exception_type else "unknown",
+        disposition=final_disposition.value,
+    ).inc()
 
     return state.model_copy(update={
         "final_disposition": final_disposition,
@@ -47,45 +54,39 @@ def _check_override(state: WorkflowState, final: Disposition) -> bool:
     return False
 
 
-def _update_lims(settings, state: WorkflowState, disposition: Disposition) -> None:
-    payload = {
-        "specimen_id": state.specimen_event.specimen_id,
-        "order_id": state.specimen_event.order_id,
-        "disposition": disposition.value,
-        "protocol_applied": state.protocol_id,
-        "confidence": state.confidence,
-        "requires_retest": disposition == Disposition.RETEST_REQUIRED,
-    }
+async def _update_lims(settings, state: WorkflowState, disposition: Disposition) -> None:
     try:
-        with httpx.Client(timeout=10.0) as client:
-            client.post(
-                f"{settings.lims_api_base_url}/specimens/{state.specimen_event.specimen_id}/disposition",
-                json=payload,
-                headers={"X-API-Key": settings.lims_api_key},
-            )
-    except httpx.HTTPError as exc:
-        logger.error("LIMS update failed for %s: %s", state.specimen_event.specimen_id, exc)
+        await call_tool(
+            settings.lims_mcp_server_url,
+            "update_specimen_disposition",
+            {
+                "specimen_id": state.specimen_event.specimen_id,
+                "order_id": state.specimen_event.order_id,
+                "disposition": disposition.value,
+                "protocol_applied": state.protocol_id,
+                "confidence": state.confidence,
+                "requires_retest": disposition == Disposition.RETEST_REQUIRED,
+            },
+        )
+    except Exception as exc:
+        logger.error("LIMS MCP update failed for %s: %s", state.specimen_event.specimen_id, exc)
         raise
 
 
-def _notify_ehr(settings, state: WorkflowState, disposition: Disposition) -> None:
-    message = _build_physician_message(state, disposition)
-    payload = {
-        "order_id": state.specimen_event.order_id,
-        "patient_id": state.specimen_event.patient_id,
-        "notification_type": "specimen_exception",
-        "disposition": disposition.value,
-        "message": message,
-    }
+async def _notify_ehr(settings, state: WorkflowState, disposition: Disposition) -> None:
     try:
-        with httpx.Client(timeout=10.0) as client:
-            client.post(
-                settings.ehr_webhook_url,
-                json=payload,
-                headers={"X-API-Key": settings.ehr_api_key},
-            )
-    except httpx.HTTPError as exc:
-        logger.error("EHR notification failed for order %s: %s", state.specimen_event.order_id, exc)
+        await call_tool(
+            settings.ehr_mcp_server_url,
+            "notify_physician",
+            {
+                "order_id": state.specimen_event.order_id,
+                "patient_id": state.specimen_event.patient_id,
+                "disposition": disposition.value,
+                "message": _build_physician_message(state, disposition),
+            },
+        )
+    except Exception as exc:
+        logger.error("EHR MCP notification failed for order %s: %s", state.specimen_event.order_id, exc)
         raise
 
 

@@ -42,13 +42,11 @@ class Settings(BaseSettings):
     database_url: str
     checkpoint_database_url: str
 
-    # LIMS integration
-    lims_api_base_url: str
-    lims_api_key: str
-
-    # EHR / Notification
-    ehr_webhook_url: str
-    ehr_api_key: str
+    # LIMS / EHR — reached via MCP servers, not called directly by the orchestrator.
+    # (LIMS_API_BASE_URL, LIMS_API_KEY, EHR_WEBHOOK_URL, EHR_API_KEY configure those
+    # servers themselves; see lab_ops_accelerator/mcp_servers/.)
+    lims_mcp_server_url: str
+    ehr_mcp_server_url: str
 
     # Observability (optional)
     langchain_api_key: str = ""
@@ -70,10 +68,8 @@ class Settings(BaseSettings):
         required = {
             "database_url": self.database_url,
             "checkpoint_database_url": self.checkpoint_database_url,
-            "lims_api_base_url": self.lims_api_base_url,
-            "lims_api_key": self.lims_api_key,
-            "ehr_webhook_url": self.ehr_webhook_url,
-            "ehr_api_key": self.ehr_api_key,
+            "lims_mcp_server_url": self.lims_mcp_server_url,
+            "ehr_mcp_server_url": self.ehr_mcp_server_url,
         }
         missing = [k for k, v in required.items() if not v]
         if missing:

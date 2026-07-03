@@ -7,15 +7,15 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      lims-mock:
+      lims-mcp:
         condition: service_started
-      ehr-mock:
+      ehr-mcp:
         condition: service_started
     environment:
       DATABASE_URL: postgresql+asyncpg://labops:labops@postgres:5432/labops
       CHECKPOINT_DATABASE_URL: postgresql://labops:labops@postgres:5432/labops
-      LIMS_API_BASE_URL: http://lims-mock:8001
-      EHR_WEBHOOK_URL: http://ehr-mock:8002/notify
+      LIMS_MCP_SERVER_URL: http://lims-mcp:9101/mcp
+      EHR_MCP_SERVER_URL: http://ehr-mcp:9102/mcp
 
   postgres:
     image: pgvector/pgvector:pg16
@@ -70,6 +70,28 @@ services:
       "
     ports:
       - "8002:8002"
+
+  lims-mcp:
+    build: .
+    command: python -m lab_ops_accelerator.mcp_servers.lims_server
+    depends_on:
+      - lims-mock
+    environment:
+      LIMS_API_BASE_URL: http://lims-mock:8001
+      LIMS_API_KEY: dev-lims-key
+    ports:
+      - "9101:9101"
+
+  ehr-mcp:
+    build: .
+    command: python -m lab_ops_accelerator.mcp_servers.ehr_server
+    depends_on:
+      - ehr-mock
+    environment:
+      EHR_WEBHOOK_URL: http://ehr-mock:8002/notify
+      EHR_API_KEY: dev-ehr-key
+    ports:
+      - "9102:9102"
 
   prometheus:
     image: prom/prometheus:latest
