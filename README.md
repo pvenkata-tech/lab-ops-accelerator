@@ -1,10 +1,10 @@
-# Lab Ops Accelerator
+# 🧬 Lab Ops Accelerator
 
-**A Forward Deployed AI Engine for genetic testing lab workflows. Accelerates specimen exception resolution by 10-100x using LangGraph and standardized MCP (Model Context Protocol) integrations.**
+**A production AI agent for genetic testing lab workflows. Accelerates specimen exception resolution by 10–100x using LangGraph and standardized MCP (Model Context Protocol) integrations.**
 
 ---
 
-## The Problem It Solves
+## 🎯 The Problem It Solves
 
 A high-throughput genetic testing lab processes thousands of specimens daily. When a specimen fails quality control (wrong tube type, insufficient volume, hemolysis), a lab technician manually looks up the rejection protocol, decides on disposition, and triggers downstream notifications. At volume, this exception-handling loop is the single largest source of avoidable turnaround-time (TAT) delay.
 
@@ -12,7 +12,7 @@ A high-throughput genetic testing lab processes thousands of specimens daily. Wh
 
 ---
 
-## Architecture: MCP-Driven Integrations
+## 🏗️ Architecture: MCP-Driven Integrations
 
 To handle the "messy last-mile of enterprise systems" (auth, schema drift, rate limits), this architecture decouples the AI reasoning from the business systems using **MCP Servers**. Adding a new upstream data source is simply configuring a new MCP server, requiring zero changes to the LangGraph orchestrator.
 
@@ -60,7 +60,7 @@ Specimen Event (LIMS webhook via MCP)
 
 ---
 
-## Key Technologies
+## 🧰 Key Technologies
 
 - **Runtime:** Python 3.12, FastAPI, Uvicorn
 - **Orchestration:** LangGraph with `interrupt()` for HITL state management; PostgreSQL checkpointing preserves state across human review delays
@@ -72,7 +72,7 @@ Specimen Event (LIMS webhook via MCP)
 
 ---
 
-## Production KPIs Tracked
+## 📊 Production KPIs Tracked
 
 The agent is instrumented for the KPIs that matter to Lab Ops leadership, not just model accuracy:
 
@@ -90,7 +90,7 @@ Override rate spikes before business KPIs degrade — it is the canary.
 
 ---
 
-## HITL Workflow
+## 🧑‍⚕️ HITL Workflow
 
 ```
 Agent evaluates exception
@@ -124,7 +124,7 @@ A supervisor can review and act without understanding the model behind it. That 
 
 ---
 
-## Evals
+## ✅ Evals
 
 Every material change to the model, prompt, protocol knowledge base, or routing logic triggers a full eval run before deployment.
 
@@ -148,7 +148,7 @@ Material changes that require a mandatory eval re-run before deployment:
 
 ---
 
-## API Surface
+## 🔌 API Surface
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
@@ -193,7 +193,7 @@ curl -X POST http://localhost:8000/v1/process \
 
 ---
 
-## Configuration
+## ⚙️ Configuration
 
 Copy `.env.example` to `.env` and populate:
 
@@ -229,7 +229,7 @@ Startup validation enforces all required fields — the service fails loudly at 
 
 ---
 
-## Deployment
+## 🚀 Deployment
 
 ### Local Development
 
@@ -264,7 +264,7 @@ IAM task roles are scoped to the specific Bedrock model IDs and RDS instance —
 
 ---
 
-## Security
+## 🔒 Security
 
 - All Bedrock calls stay inside the AWS boundary — no PHI or specimen data crosses to a public API endpoint
 - LIMS and EHR credentials loaded from Secrets Manager; never in environment literals in production
@@ -275,7 +275,7 @@ IAM task roles are scoped to the specific Bedrock model IDs and RDS instance —
 
 ---
 
-## Testing
+## 🧪 Testing
 
 ```bash
 # Unit + graph tests (no external dependencies)
@@ -293,13 +293,11 @@ INTEGRATION=1 pytest tests/test_workflow_integration.py -q
 
 ---
 
-## The Forward Deployed Motion
-
-This prototype was built to demonstrate a specific operating model, not just a technology stack:
+## 🧭 Design Philosophy
 
 1. **Find the leverage** — Exception routing is the highest-friction step in Lab Ops not because the decisions are hard, but because every decision requires system-hopping. High volume, consistent judgment pattern, system-of-record lookup as the bottleneck. That is the shape of a 10–100x workflow candidate.
 
-2. **Design the future-state workflow** — Mapped all exception types and their protocols. Defined the agent/human handoff at the confidence boundary that eval data validates, not the boundary that feels safest. Designed the supervisor approval surface for lab staff vocabulary, not engineering vocabulary.
+2. **Design the future-state workflow** — Map all exception types and their protocols. Define the agent/human handoff at the confidence boundary that eval data validates, not the boundary that feels safest. Design the supervisor approval surface for lab staff vocabulary, not engineering vocabulary.
 
 3. **Build and connect the systems** — MCP servers decouple "what tools exist" from "how the agent is wired." Adding a new upstream source (e.g., cold-chain temperature logger) is a new MCP server, not an orchestrator code change. The Golden Record pattern ensures agents never act directly against a flaky upstream system.
 
@@ -309,10 +307,4 @@ This prototype was built to demonstrate a specific operating model, not just a t
 
 ---
 
-## Related Work
-
-- **[RCM Guardian](https://github.com/pvenkata-tech/the-rcm-guardian)** — The same orchestration pattern applied downstream: billing document extraction, payer policy matching, and claims adjudication support. Lab Ops Accelerator operates upstream (specimen handling); RCM Guardian operates downstream (revenue cycle). Together they cover the full specimen-to-payment lifecycle.
-
----
-
-*Built as a Forward Deployed AI prototype targeting genetic testing lab operations. Stack: Python 3.12 · FastAPI · LangGraph · AWS Bedrock (Claude 3.5 Sonnet + Titan Embeddings v2) · PostgreSQL + pgvector · MCP servers · Prometheus · Grafana · Terraform/AWS Fargate.*
+*Stack: Python 3.12 · FastAPI · LangGraph · AWS Bedrock (Claude 3.5 Sonnet + Titan Embeddings v2) · PostgreSQL + pgvector · MCP servers · Prometheus · Grafana · Terraform/AWS Fargate.*
