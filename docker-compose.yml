@@ -1,0 +1,94 @@
+services:
+  guardian:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      lims-mock:
+        condition: service_started
+      ehr-mock:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql+asyncpg://labops:labops@postgres:5432/labops
+      CHECKPOINT_DATABASE_URL: postgresql://labops:labops@postgres:5432/labops
+      LIMS_API_BASE_URL: http://lims-mock:8001
+      EHR_WEBHOOK_URL: http://ehr-mock:8002/notify
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: labops
+      POSTGRES_PASSWORD: labops
+      POSTGRES_DB: labops
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U labops"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  lims-mock:
+    image: python:3.12-slim
+    command: >
+      python -c "
+      from http.server import HTTPServer, BaseHTTPRequestHandler
+      import json
+      class H(BaseHTTPRequestHandler):
+          def do_POST(self):
+              length = int(self.headers.get('Content-Length', 0))
+              self.rfile.read(length)
+              self.send_response(200)
+              self.end_headers()
+              self.wfile.write(json.dumps({'status': 'ok'}).encode())
+          def log_message(self, *a): pass
+      HTTPServer(('0.0.0.0', 8001), H).serve_forever()
+      "
+    ports:
+      - "8001:8001"
+
+  ehr-mock:
+    image: python:3.12-slim
+    command: >
+      python -c "
+      from http.server import HTTPServer, BaseHTTPRequestHandler
+      import json
+      class H(BaseHTTPRequestHandler):
+          def do_POST(self):
+              length = int(self.headers.get('Content-Length', 0))
+              self.rfile.read(length)
+              self.send_response(200)
+              self.end_headers()
+              self.wfile.write(json.dumps({'status': 'notified'}).encode())
+          def log_message(self, *a): pass
+      HTTPServer(('0.0.0.0', 8002), H).serve_forever()
+      "
+    ports:
+      - "8002:8002"
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./dashboards:/etc/grafana/provisioning/dashboards
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+
+volumes:
+  postgres_data:
+  grafana_data:

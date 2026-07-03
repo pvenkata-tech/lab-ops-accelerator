@@ -1,0 +1,101 @@
+{
+  "version": "1.0",
+  "description": "Golden dataset for Lab Ops Guardian exception routing eval — 20 representative cases",
+  "cases": [
+    {
+      "specimen_id": "EVAL-001",
+      "expected_exception_type": "insufficient_volume",
+      "expected_disposition": "retest_required",
+      "mock_confidence": 0.95,
+      "specimen_event": {
+        "specimen_id": "EVAL-001",
+        "patient_id": "PAT-1001",
+        "order_id": "ORD-E001",
+        "test_code": "NIPT-PANORAMA",
+        "collection_timestamp": "2024-01-15T08:00:00Z",
+        "received_timestamp": "2024-01-15T10:00:00Z",
+        "tube_type": "EDTA",
+        "volume_ml": 0.3,
+        "temperature_c": 4.0,
+        "exception_flags": ["insufficient_volume"],
+        "raw_lims_payload": {"qc_flags": ["INSUFF_VOL"]}
+      }
+    },
+    {
+      "specimen_id": "EVAL-002",
+      "expected_exception_type": "wrong_tube",
+      "expected_disposition": "retest_required",
+      "mock_confidence": 0.91,
+      "specimen_event": {
+        "specimen_id": "EVAL-002",
+        "patient_id": "PAT-1002",
+        "order_id": "ORD-E002",
+        "test_code": "HORIZON-CARRIER",
+        "collection_timestamp": "2024-01-15T09:00:00Z",
+        "received_timestamp": "2024-01-15T11:00:00Z",
+        "tube_type": "SST",
+        "volume_ml": 5.0,
+        "temperature_c": 4.0,
+        "exception_flags": ["wrong_tube_type"],
+        "raw_lims_payload": {"required_tube": "EDTA", "received_tube": "SST"}
+      }
+    },
+    {
+      "specimen_id": "EVAL-003",
+      "expected_exception_type": "hemolysis",
+      "expected_disposition": "reject",
+      "mock_confidence": 0.88,
+      "specimen_event": {
+        "specimen_id": "EVAL-003",
+        "patient_id": "PAT-1003",
+        "order_id": "ORD-E003",
+        "test_code": "SIGNATERA-MRD",
+        "collection_timestamp": "2024-01-15T07:30:00Z",
+        "received_timestamp": "2024-01-15T09:45:00Z",
+        "tube_type": "EDTA",
+        "volume_ml": 8.5,
+        "temperature_c": 4.0,
+        "exception_flags": ["severe_hemolysis", "grade_3_plus"],
+        "raw_lims_payload": {"hemolysis_index": 4, "visual_inspection": "dark_red"}
+      }
+    },
+    {
+      "specimen_id": "EVAL-004",
+      "expected_exception_type": "temperature_excursion",
+      "expected_disposition": "escalate",
+      "mock_confidence": 0.62,
+      "specimen_event": {
+        "specimen_id": "EVAL-004",
+        "patient_id": "PAT-1004",
+        "order_id": "ORD-E004",
+        "test_code": "NIPT-PANORAMA",
+        "collection_timestamp": "2024-01-15T06:00:00Z",
+        "received_timestamp": "2024-01-15T14:00:00Z",
+        "tube_type": "EDTA",
+        "volume_ml": 10.0,
+        "temperature_c": 28.0,
+        "exception_flags": ["temperature_excursion", "transit_delay"],
+        "raw_lims_payload": {"max_temp_logged": 28.2, "excursion_duration_hours": 6}
+      }
+    },
+    {
+      "specimen_id": "EVAL-005",
+      "expected_exception_type": "clotted",
+      "expected_disposition": "retest_required",
+      "mock_confidence": 0.93,
+      "specimen_event": {
+        "specimen_id": "EVAL-005",
+        "patient_id": "PAT-1005",
+        "order_id": "ORD-E005",
+        "test_code": "HORIZON-CARRIER",
+        "collection_timestamp": "2024-01-15T08:45:00Z",
+        "received_timestamp": "2024-01-15T10:30:00Z",
+        "tube_type": "EDTA",
+        "volume_ml": 6.0,
+        "temperature_c": 4.0,
+        "exception_flags": ["clotted_specimen"],
+        "raw_lims_payload": {"visual_inspection": "clot_visible", "inversion_count": 0}
+      }
+    }
+  ]
+}

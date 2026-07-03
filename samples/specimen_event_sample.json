@@ -1,0 +1,24 @@
+{
+  "specimen_event": {
+    "specimen_id": "SPEC-2024-04821",
+    "patient_id": "PAT-99312",
+    "order_id": "ORD-20240315-7741",
+    "test_code": "NIPT-PANORAMA",
+    "collection_timestamp": "2024-03-15T08:32:00Z",
+    "received_timestamp": "2024-03-15T10:15:00Z",
+    "tube_type": "EDTA",
+    "volume_ml": 0.3,
+    "temperature_c": 4.2,
+    "exception_flags": ["insufficient_volume", "below_minimum_threshold"],
+    "raw_lims_payload": {
+      "accession": "ACC-2024-04821",
+      "site_id": "SITE-SF-01",
+      "collected_by": "NRS-4412",
+      "container_code": "LAVENDER_CAP_10ML",
+      "received_volume_ul": 300,
+      "minimum_required_ul": 500,
+      "qc_status": "FAILED",
+      "qc_flags": ["INSUFF_VOL"]
+    }
+  }
+}
