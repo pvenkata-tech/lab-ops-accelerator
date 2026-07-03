@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from lab_ops_guardian.graph.state import Disposition, SpecimenEvent, WorkflowState
+from lab_ops_accelerator.graph.state import Disposition, SpecimenEvent, WorkflowState
 
 logger = logging.getLogger(__name__)
 
@@ -73,9 +73,9 @@ def run_eval(dataset_path: str) -> EvalResult:
 
 
 def _run_case(case: dict) -> WorkflowState:
-    from lab_ops_guardian.nodes.exception_router import route_exception
-    from lab_ops_guardian.nodes.intake_classifier import classify_intake
-    from lab_ops_guardian.nodes.qc_evaluator import evaluate_qc
+    from lab_ops_accelerator.nodes.exception_router import route_exception
+    from lab_ops_accelerator.nodes.intake_classifier import classify_intake
+    from lab_ops_accelerator.nodes.qc_evaluator import evaluate_qc
 
     event = SpecimenEvent(**case["specimen_event"])
     state = WorkflowState(specimen_event=event)

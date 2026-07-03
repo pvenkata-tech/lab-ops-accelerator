@@ -9,13 +9,13 @@ from pydantic import BaseModel
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from starlette.responses import Response
 
-from lab_ops_guardian.graph.state import (
+from lab_ops_accelerator.graph.state import (
     Disposition,
     SpecimenEvent,
     SupervisorDecision,
     WorkflowState,
 )
-from lab_ops_guardian.observability.metrics import EXCEPTION_RESOLUTION_SECONDS
+from lab_ops_accelerator.observability.metrics import EXCEPTION_RESOLUTION_SECONDS
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -46,10 +46,10 @@ async def ready():
 
 @router.post("/v1/process")
 async def process_specimen(req: ProcessRequest):
-    from lab_ops_guardian.nodes.exception_router import route_exception
-    from lab_ops_guardian.nodes.intake_classifier import classify_intake
-    from lab_ops_guardian.nodes.notification_dispatcher import dispatch_notification
-    from lab_ops_guardian.nodes.qc_evaluator import evaluate_qc
+    from lab_ops_accelerator.nodes.exception_router import route_exception
+    from lab_ops_accelerator.nodes.intake_classifier import classify_intake
+    from lab_ops_accelerator.nodes.notification_dispatcher import dispatch_notification
+    from lab_ops_accelerator.nodes.qc_evaluator import evaluate_qc
 
     thread_id = f"spec-{uuid.uuid4().hex[:12]}"
     start = time.perf_counter()
@@ -97,7 +97,7 @@ async def process_specimen(req: ProcessRequest):
 
 @router.post("/v1/resume")
 async def resume_thread(req: ResumeRequest):
-    from lab_ops_guardian.nodes.notification_dispatcher import dispatch_notification
+    from lab_ops_accelerator.nodes.notification_dispatcher import dispatch_notification
 
     state = _active_threads.pop(req.thread_id, None)
     if state is None:

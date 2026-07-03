@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from lab_ops_guardian.evals.eval_runner import run_eval
+from lab_ops_accelerator.evals.eval_runner import run_eval
 
 
 GOLDEN_DATASET = Path(__file__).parent.parent / "samples" / "golden_dataset.json"

@@ -5,14 +5,14 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from lab_ops_guardian.graph.state import (
+from lab_ops_accelerator.graph.state import (
     Disposition,
     ExceptionType,
     SpecimenEvent,
     WorkflowState,
 )
-from lab_ops_guardian.nodes.exception_router import route_exception
-from lab_ops_guardian.nodes.intake_classifier import classify_intake
+from lab_ops_accelerator.nodes.exception_router import route_exception
+from lab_ops_accelerator.nodes.intake_classifier import classify_intake
 
 
 def _make_state(exception_flags=None, volume_ml=5.0, temp_c=4.0, test_code="NIPT-PANORAMA"):
@@ -112,7 +112,7 @@ class TestExceptionRouter:
             "qc_flags": [],
         })
         with patch("boto3.client", return_value=_mock_bedrock_route("escalate", 0.55)):
-            with patch("lab_ops_guardian.nodes.exception_router.interrupt"):
+            with patch("lab_ops_accelerator.nodes.exception_router.interrupt"):
                 result = route_exception(state)
         assert result.requires_human_review is True
         assert result.confidence == 0.55

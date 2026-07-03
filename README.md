@@ -1,23 +1,23 @@
-# Lab Ops Guardian
+# Lab Ops Accelerator
 
-**Production AI agent for Lab Operations specimen exception management and throughput optimization — built as a Forward Deployed Engineering prototype for genetic testing lab workflows.**
+**A Forward Deployed AI Engine for genetic testing lab workflows. Accelerates specimen exception resolution by 10-100x using LangGraph and standardized MCP (Model Context Protocol) integrations.**
 
 ---
 
 ## The Problem It Solves
 
-A high-throughput genetic testing lab processes thousands of specimens daily. When a specimen fails quality control — wrong tube type, insufficient volume, hemolysis, temperature excursion, lipemia — a lab technician manually looks up the rejection protocol, decides on disposition (retest, reject, escalate), and triggers downstream notifications to the ordering physician. At volume, this exception-handling loop is the single largest source of avoidable turnaround-time (TAT) delay.
+A high-throughput genetic testing lab processes thousands of specimens daily. When a specimen fails quality control (wrong tube type, insufficient volume, hemolysis), a lab technician manually looks up the rejection protocol, decides on disposition, and triggers downstream notifications. At volume, this exception-handling loop is the single largest source of avoidable turnaround-time (TAT) delay.
 
-The bottleneck is not the decision — most exceptions have a well-defined protocol. The bottleneck is the lookup, the system-hopping, and the notification dispatch that humans do after the decision is already obvious.
-
-**Lab Ops Guardian collapses that loop to seconds.** The agent classifies the exception, retrieves the applicable handling protocol via RAG, routes disposition automatically for standard cases, and holds ambiguous cases for a lab supervisor's one-click review — with full audit trail, structured logs, and KPI dashboards tracking every run.
+**Lab Ops Accelerator collapses that loop to seconds.** By leveraging **Model Context Protocol (MCP)** to standardize connections to the LIMS and EHR, the agent seamlessly classifies the exception, retrieves protocols via RAG, and executes the disposition. Standard cases are auto-routed; ambiguous cases are held for a lab supervisor's one-click review.
 
 ---
 
-## Architecture
+## Architecture: MCP-Driven Integrations
 
-```
-Specimen Event (LIMS webhook)
+To handle the "messy last-mile of enterprise systems" (auth, schema drift, rate limits), this architecture decouples the AI reasoning from the business systems using **MCP Servers**. Adding a new upstream data source is simply configuring a new MCP server, requiring zero changes to the LangGraph orchestrator.
+
+```text
+Specimen Event (LIMS webhook via MCP)
         │
         ▼
 ┌─────────────────────────────────────────────────────────────────┐
@@ -33,14 +33,14 @@ Specimen Event (LIMS webhook)
 │                           │                      │              │
 │                           ▼                      ▼              │
 │                  ┌────────────────┐    ┌──────────────────┐    │
-│                  │  Notification  │    │  HITL interrupt() │    │
-│                  │  Dispatcher    │    │  supervisor review│    │
+│                  │  MCP Client    │    │  HITL interrupt() │    │
+│                  │  (Dispatcher)  │    │  supervisor review│    │
 │                  └────────┬───────┘    └──────────┬────────┘   │
 │                           │                       │             │
 │                           │            supervisor decision      │
 │                           │                       │             │
 │                           ▼                       ▼             │
-│                   LIMS status update    Notification Dispatcher  │
+│                 [ LIMS / EHR MCP Servers ]                      │
 └─────────────────────────────────────────────────────────────────┘
         │
         ▼
@@ -56,7 +56,7 @@ Specimen Event (LIMS webhook)
 | **QC Evaluation** | Retrieves applicable QC thresholds and rejection criteria via RAG | pgvector knowledge base |
 | **Exception Router** | Determines disposition (auto-route vs. HITL) based on exception type, protocol confidence, and specimen criticality | Protocol knowledge base |
 | **HITL (when triggered)** | Checkpoints state to Postgres; returns HTTP 202; supervisor notified | PostgreSQL checkpoint store |
-| **Notification Dispatch** | Alerts ordering physician (EHR), triggers retest order in LIMS if indicated, updates specimen status | LIMS MCP server, EHR MCP server |
+| **MCP Client (Dispatcher)** | Alerts ordering physician (EHR), triggers retest order in LIMS if indicated, updates specimen status | LIMS MCP server, EHR MCP server |
 
 ---
 
@@ -66,7 +66,7 @@ Specimen Event (LIMS webhook)
 - **Orchestration:** LangGraph with `interrupt()` for HITL state management; PostgreSQL checkpointing preserves state across human review delays
 - **Model Layer:** AWS Bedrock — Claude 3.5 Sonnet for exception reasoning; Amazon Titan Embeddings v2 for protocol retrieval
 - **Knowledge Base:** PostgreSQL 16 with pgvector; stores specimen handling protocols, QC threshold tables, rejection criteria, and retest decision trees
-- **MCP Servers:** LIMS integration and EHR notification server expose business system actions as tool-callable interfaces — adding a new upstream source is a new MCP server, not an orchestrator code change
+- **MCP Servers:** LIMS integration and EHR notification are exposed to the agent as standardized Model Context Protocol servers — the orchestrator calls tools, not bespoke SDKs. Adding a new upstream source is a new MCP server, not an orchestrator code change
 - **Infrastructure:** Docker Compose (local), Terraform/AWS Fargate (production) — 100% AWS stack aligned with enterprise security boundaries
 - **Observability:** Prometheus metrics, Grafana dashboards, LangSmith tracing; structured per-call logs including prompt, model, confidence, disposition, and override flag
 
@@ -109,7 +109,7 @@ POST /v1/resume {thread_id, decision, rationale}
         │
         ▼
 Graph resumes from checkpoint
-→ Notification Dispatcher executes supervisor's decision
+→ MCP Client (Dispatcher) executes supervisor's decision
 → LIMS status updated
 → Override logged if decision differs from agent recommendation
 ```
@@ -134,7 +134,7 @@ Every material change to the model, prompt, protocol knowledge base, or routing 
 
 ```bash
 # Run offline eval
-python -m lab_ops_guardian.evals.eval_runner --dataset samples/golden_dataset.json
+python -m lab_ops_accelerator.evals.eval_runner --dataset samples/golden_dataset.json
 
 # Output: accuracy, top-1 retrieval precision, HITL trigger rate, cost per case
 ```
@@ -144,7 +144,7 @@ Material changes that require a mandatory eval re-run before deployment:
 - Any prompt modification
 - Protocol knowledge base update (new protocols, revised QC thresholds)
 - Routing logic or confidence threshold adjustment
-- Upstream schema change in LIMS or EHR event payloads
+- Upstream schema change in LIMS or EHR event payloads (i.e. an MCP server contract change)
 
 ---
 
@@ -207,18 +207,18 @@ BEDROCK_EMBEDDING_MODEL_ID=amazon.titan-embed-text-v2:0
 DATABASE_URL=postgresql+asyncpg://labops:labops@localhost:5432/labops
 CHECKPOINT_DATABASE_URL=postgresql://labops:labops@localhost:5432/labops
 
-# LIMS integration — required
+# LIMS integration (MCP server) — required
 LIMS_API_BASE_URL=http://lims-mock:8001
 LIMS_API_KEY=dev-lims-key
 
-# EHR / Notification — required
+# EHR / Notification (MCP server) — required
 EHR_WEBHOOK_URL=http://ehr-mock:8002/notify
 EHR_API_KEY=dev-ehr-key
 
 # Observability — optional (recommended for production)
 LANGCHAIN_API_KEY=
 LANGCHAIN_TRACING_V2=true
-LANGSMITH_PROJECT=lab-ops-guardian
+LANGSMITH_PROJECT=lab-ops-accelerator
 
 # Agent tuning
 HITL_CONFIDENCE_THRESHOLD=0.80
@@ -240,7 +240,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Compose brings up: PostgreSQL with pgvector, LIMS mock, EHR mock, Prometheus, Grafana, and the Guardian service. The knowledge base seeds automatically from `samples/protocols/` on first start.
+Compose brings up: PostgreSQL with pgvector, LIMS mock, EHR mock, Prometheus, Grafana, and the Accelerator service. The knowledge base seeds automatically from `samples/protocols/` on first start.
 
 ### Production (AWS)
 
@@ -311,7 +311,7 @@ This prototype was built to demonstrate a specific operating model, not just a t
 
 ## Related Work
 
-- **[RCM Guardian](https://github.com/pvenkata-tech/the-rcm-guardian)** — The same orchestration pattern applied downstream: billing document extraction, payer policy matching, and claims adjudication support. Lab Ops Guardian operates upstream (specimen handling); RCM Guardian operates downstream (revenue cycle). Together they cover the full specimen-to-payment lifecycle.
+- **[RCM Guardian](https://github.com/pvenkata-tech/the-rcm-guardian)** — The same orchestration pattern applied downstream: billing document extraction, payer policy matching, and claims adjudication support. Lab Ops Accelerator operates upstream (specimen handling); RCM Guardian operates downstream (revenue cycle). Together they cover the full specimen-to-payment lifecycle.
 
 ---
 

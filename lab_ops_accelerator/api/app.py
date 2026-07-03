@@ -4,9 +4,9 @@ import logging
 
 from fastapi import FastAPI
 
-from lab_ops_guardian.api.routes import router
-from lab_ops_guardian.config import get_settings
-from lab_ops_guardian.rag.knowledge_base import init_knowledge_base, seed_protocols
+from lab_ops_accelerator.api.routes import router
+from lab_ops_accelerator.config import get_settings
+from lab_ops_accelerator.rag.knowledge_base import init_knowledge_base, seed_protocols
 
 logging.basicConfig(
     level=logging.INFO,
@@ -19,7 +19,7 @@ def create_app() -> FastAPI:
     settings = get_settings()
 
     app = FastAPI(
-        title="Lab Ops Guardian",
+        title="Lab Ops Accelerator",
         description="AI agent for specimen exception management and lab throughput optimization",
         version="1.0.0",
     )
@@ -27,7 +27,7 @@ def create_app() -> FastAPI:
 
     @app.on_event("startup")
     async def startup():
-        logger.info("Starting Lab Ops Guardian (model=%s)", settings.bedrock_claude_model_id)
+        logger.info("Starting Lab Ops Accelerator (model=%s)", settings.bedrock_claude_model_id)
         try:
             init_knowledge_base()
             seed_protocols()

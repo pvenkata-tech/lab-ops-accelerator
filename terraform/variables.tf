@@ -1,7 +1,7 @@
 variable "app_name" {
   description = "Application name used for resource naming"
   type        = string
-  default     = "lab-ops-guardian"
+  default     = "lab-ops-accelerator"
 }
 
 variable "environment" {
@@ -17,7 +17,7 @@ variable "aws_region" {
 }
 
 variable "container_image" {
-  description = "Docker image URI (ECR) for the guardian service"
+  description = "Docker image URI (ECR) for the accelerator service"
   type        = string
 }
 

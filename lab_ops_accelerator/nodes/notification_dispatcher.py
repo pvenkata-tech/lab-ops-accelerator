@@ -4,9 +4,9 @@ import logging
 
 import httpx
 
-from lab_ops_guardian.config import get_settings
-from lab_ops_guardian.graph.state import Disposition, SupervisorDecision, WorkflowState
-from lab_ops_guardian.observability.metrics import EXCEPTIONS_PROCESSED, SUPERVISOR_OVERRIDES
+from lab_ops_accelerator.config import get_settings
+from lab_ops_accelerator.graph.state import Disposition, SupervisorDecision, WorkflowState
+from lab_ops_accelerator.observability.metrics import EXCEPTIONS_PROCESSED, SUPERVISOR_OVERRIDES
 
 logger = logging.getLogger(__name__)
 

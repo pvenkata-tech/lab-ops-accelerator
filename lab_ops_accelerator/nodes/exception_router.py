@@ -6,9 +6,9 @@ import logging
 import boto3
 from langgraph.types import interrupt
 
-from lab_ops_guardian.config import get_settings
-from lab_ops_guardian.graph.state import Disposition, WorkflowState
-from lab_ops_guardian.observability.metrics import HITL_RATE
+from lab_ops_accelerator.config import get_settings
+from lab_ops_accelerator.graph.state import Disposition, WorkflowState
+from lab_ops_accelerator.observability.metrics import HITL_RATE
 
 logger = logging.getLogger(__name__)
 

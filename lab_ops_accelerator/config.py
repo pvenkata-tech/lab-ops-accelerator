@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     # Observability (optional)
     langchain_api_key: str = ""
     langchain_tracing_v2: bool = False
-    langsmith_project: str = "lab-ops-guardian"
+    langsmith_project: str = "lab-ops-accelerator"
 
     # Agent tuning
     hitl_confidence_threshold: float = 0.80

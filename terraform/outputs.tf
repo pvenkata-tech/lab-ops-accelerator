@@ -1,6 +1,6 @@
 output "alb_dns_name" {
-  description = "Internal ALB DNS name for the guardian service"
-  value       = aws_lb.guardian.dns_name
+  description = "Internal ALB DNS name for the accelerator service"
+  value       = aws_lb.accelerator.dns_name
 }
 
 output "ecs_cluster_name" {
@@ -21,5 +21,5 @@ output "secrets_arn" {
 
 output "cloudwatch_log_group" {
   description = "CloudWatch log group name"
-  value       = aws_cloudwatch_log_group.guardian.name
+  value       = aws_cloudwatch_log_group.accelerator.name
 }

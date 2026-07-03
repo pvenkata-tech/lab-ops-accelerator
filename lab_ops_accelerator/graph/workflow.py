@@ -5,12 +5,12 @@ import logging
 from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.graph import END, StateGraph
 
-from lab_ops_guardian.config import get_settings
-from lab_ops_guardian.graph.state import WorkflowState
-from lab_ops_guardian.nodes.exception_router import route_exception
-from lab_ops_guardian.nodes.intake_classifier import classify_intake
-from lab_ops_guardian.nodes.notification_dispatcher import dispatch_notification
-from lab_ops_guardian.nodes.qc_evaluator import evaluate_qc
+from lab_ops_accelerator.config import get_settings
+from lab_ops_accelerator.graph.state import WorkflowState
+from lab_ops_accelerator.nodes.exception_router import route_exception
+from lab_ops_accelerator.nodes.intake_classifier import classify_intake
+from lab_ops_accelerator.nodes.notification_dispatcher import dispatch_notification
+from lab_ops_accelerator.nodes.qc_evaluator import evaluate_qc
 
 logger = logging.getLogger(__name__)
 

@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "description": "Golden dataset for Lab Ops Guardian exception routing eval — 20 representative cases",
+  "description": "Golden dataset for Lab Ops Accelerator exception routing eval — 20 representative cases",
   "cases": [
     {
       "specimen_id": "EVAL-001",

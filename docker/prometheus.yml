@@ -2,7 +2,7 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
-  - job_name: lab-ops-guardian
+  - job_name: lab-ops-accelerator
     static_configs:
-      - targets: ['guardian:8000']
+      - targets: ['accelerator:8000']
     metrics_path: /metrics

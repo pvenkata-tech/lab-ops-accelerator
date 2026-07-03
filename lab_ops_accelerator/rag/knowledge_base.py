@@ -7,7 +7,7 @@ from pathlib import Path
 import boto3
 import psycopg
 
-from lab_ops_guardian.config import get_settings
+from lab_ops_accelerator.config import get_settings
 
 logger = logging.getLogger(__name__)
 

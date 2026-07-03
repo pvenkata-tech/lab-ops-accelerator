@@ -5,8 +5,8 @@ import logging
 
 import boto3
 
-from lab_ops_guardian.config import get_settings
-from lab_ops_guardian.graph.state import ExceptionType, WorkflowState
+from lab_ops_accelerator.config import get_settings
+from lab_ops_accelerator.graph.state import ExceptionType, WorkflowState
 
 logger = logging.getLogger(__name__)
 

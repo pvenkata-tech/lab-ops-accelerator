@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import logging
 
-from lab_ops_guardian.graph.state import WorkflowState
-from lab_ops_guardian.rag.retriever import retrieve_protocol
+from lab_ops_accelerator.graph.state import WorkflowState
+from lab_ops_accelerator.rag.retriever import retrieve_protocol
 
 logger = logging.getLogger(__name__)
 
