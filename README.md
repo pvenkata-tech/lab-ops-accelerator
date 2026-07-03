@@ -16,36 +16,30 @@ A high-throughput genetic testing lab processes thousands of specimens daily. Wh
 
 To handle the "messy last-mile of enterprise systems" (auth, schema drift, rate limits), this architecture decouples the AI reasoning from the business systems using **MCP Servers**. Adding a new upstream data source is simply configuring a new MCP server, requiring zero changes to the LangGraph orchestrator.
 
-```text
-Specimen Event (LIMS webhook via MCP)
-        │
-        ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    LangGraph Workflow                           │
-│                                                                 │
-│  ┌──────────────┐   ┌──────────────┐   ┌────────────────────┐  │
-│  │   Intake     │──▶│  QC          │──▶│  Exception         │  │
-│  │  Classifier  │   │  Evaluator   │   │  Router            │  │
-│  └──────────────┘   └──────────────┘   └────────┬───────────┘  │
-│                                                  │              │
-│                           ┌──────────────────────┤              │
-│                     confidence ≥ threshold   confidence < threshold
-│                           │                      │              │
-│                           ▼                      ▼              │
-│                  ┌────────────────┐    ┌──────────────────┐    │
-│                  │  MCP Client    │    │  HITL interrupt() │    │
-│                  │  (Dispatcher)  │    │  supervisor review│    │
-│                  └────────┬───────┘    └──────────┬────────┘   │
-│                           │                       │             │
-│                           │            supervisor decision      │
-│                           │                       │             │
-│                           ▼                       ▼             │
-│                 [ LIMS / EHR MCP Servers ]                      │
-└─────────────────────────────────────────────────────────────────┘
-        │
-        ▼
-   Prometheus metrics → Grafana KPI dashboard
-   Structured logs → CloudWatch / LangSmith tracing
+```mermaid
+flowchart TD
+    EVT["Specimen Event<br/>(LIMS webhook via MCP)"]:::input
+
+    subgraph LG["LangGraph Workflow"]
+        direction LR
+        IC["Intake<br/>Classifier"] --> QC["QC<br/>Evaluator"] --> ER["Exception<br/>Router"]
+        ER -- "confidence ≥ threshold" --> DISP["MCP Client<br/>(Dispatcher)"]
+        ER -- "confidence < threshold" --> HITL["HITL interrupt()<br/>supervisor review"]
+        HITL -- "supervisor decision" --> DISP
+    end
+
+    MCPS["LIMS / EHR MCP Servers"]:::external
+    OBS1["Prometheus → Grafana<br/>KPI dashboard"]:::observability
+    OBS2["Structured logs → CloudWatch<br/>/ LangSmith tracing"]:::observability
+
+    EVT --> IC
+    DISP --> MCPS
+    MCPS --> OBS1
+    MCPS --> OBS2
+
+    classDef input fill:#2563eb,stroke:#1e3a8a,color:#fff
+    classDef external fill:#0f766e,stroke:#134e4a,color:#fff
+    classDef observability fill:#6d28d9,stroke:#4c1d95,color:#fff
 ```
 
 ### Data Flow
@@ -92,26 +86,27 @@ Override rate spikes before business KPIs degrade — it is the canary.
 
 ## 🧑‍⚕️ HITL Workflow
 
-```
-Agent evaluates exception
-        │
- confidence < threshold?
-        │ YES
-        ▼
-interrupt() called
-→ State checkpointed to Postgres
-→ HTTP 202 returned to caller
-→ Supervisor notified via EHR MCP server
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Caller
+    participant Agent as LangGraph Agent
+    participant PG as Postgres (checkpoint)
+    participant Sup as Supervisor
+    participant MCP as MCP Client (Dispatcher)
 
-[supervisor reviews in approval surface]
-        │
-POST /v1/resume {thread_id, decision, rationale}
-        │
-        ▼
-Graph resumes from checkpoint
-→ MCP Client (Dispatcher) executes supervisor's decision
-→ LIMS status updated
-→ Override logged if decision differs from agent recommendation
+    Agent->>Agent: Evaluate exception (confidence < threshold)
+    Agent->>PG: Checkpoint state
+    Agent-->>Caller: HTTP 202 (pending_review)
+    Agent->>Sup: Notify via EHR MCP server
+
+    Note over Sup: Reviews in approval surface —<br/>Approve / Override / Escalate
+
+    Sup->>Agent: POST /v1/resume {thread_id, decision, rationale}
+    Agent->>PG: Resume from checkpoint
+    Agent->>MCP: Execute supervisor's decision
+    MCP->>MCP: Update LIMS status
+    MCP->>MCP: Log override if decision differs from recommendation
 ```
 
 The approval surface is designed for lab supervisors, not engineers. It shows:
