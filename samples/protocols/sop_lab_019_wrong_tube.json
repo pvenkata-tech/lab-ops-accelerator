@@ -1,0 +1,6 @@
+{
+  "id": "SOP-LAB-019",
+  "title": "Wrong Tube Type Collected",
+  "exception_type": "wrong_tube",
+  "content": "The ordered test requires a specific anticoagulant or additive (e.g. EDTA for hematology, sodium citrate for coagulation, SST for chemistry) and the received tube type does not match. Disposition: retest_required in nearly all cases, since analyte stability and anticoagulant interactions cannot be corrected after the fact. Exception: if the wrong tube is a superset-compatible type (e.g. lithium heparin substituted for sodium heparin on a basic metabolic panel) and the test menu confirms compatibility, accept_with_notation. Otherwise reject the specimen and request recollection in the correct tube."
+}

@@ -1,0 +1,6 @@
+{
+  "id": "SOP-LAB-047",
+  "title": "Insufficient Volume — EDTA Tube",
+  "exception_type": "insufficient_volume",
+  "content": "When an EDTA specimen arrives with volume below the minimum required for the ordered test, the specimen cannot be processed as received. Disposition: retest_required. Contact the collection site to arrange recollection using a full-draw EDTA tube. Do not attempt to process a partial-draw specimen, as anticoagulant-to-blood ratio errors invalidate downstream results. If volume is only marginally below threshold (within 10%) and the test is time-critical, escalate to the lab director for a case-by-case waiver."
+}

@@ -1,0 +1,6 @@
+{
+  "id": "SOP-LAB-023",
+  "title": "Lipemia — Turbid Specimen",
+  "exception_type": "lipemia",
+  "content": "Lipemic specimens scatter light and can interfere with photometric and turbidimetric assays. Mild lipemia: accept_with_notation with a QC comment noting possible analyte bias. Marked lipemia obscuring the serum/plasma layer: reject and require a fasting recollection, since ultracentrifugation is not available at this site. If the ordered panel does not include lipid-sensitive analytes (e.g. a molecular or genetic test), lipemia does not by itself require rejection — accept_with_notation is sufficient."
+}

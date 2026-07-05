@@ -1,0 +1,6 @@
+{
+  "id": "SOP-LAB-012",
+  "title": "Hemolysis — Ambiguous Grade",
+  "exception_type": "hemolysis",
+  "content": "Hemolyzed specimens interfere with potassium, LDH, and other analytes sensitive to intracellular content leakage. Grade 1-2 (mild) hemolysis: accept_with_notation, flag the report with a hemolysis QC comment. Grade 3+ (moderate to gross) hemolysis, or any grade on a test panel that includes potassium or LDH: reject and require retest. When the hemolysis grade cannot be determined from the LIMS payload alone, treat as ambiguous and escalate for a technologist to visually re-grade the specimen before a disposition is finalized."
+}

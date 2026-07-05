@@ -4,10 +4,10 @@ import json
 import logging
 from pathlib import Path
 
-import boto3
 import psycopg
 
 from lab_ops_accelerator.config import get_settings
+from lab_ops_accelerator.rag.embeddings import get_embedding_client
 
 logger = logging.getLogger(__name__)
 
@@ -23,9 +23,14 @@ CREATE TABLE IF NOT EXISTS protocols (
     updated_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS protocols_embedding_idx
-    ON protocols USING ivfflat (embedding vector_cosine_ops)
-    WITH (lists = 50);
+-- HNSW rather than IVFFlat: IVFFlat partitions rows into `lists` buckets and by
+-- default probes only one of them, so on a knowledge base this small (dozens to a
+-- few hundred protocols) a probe can easily land on an empty bucket and silently
+-- return zero rows for an ORDER BY ... LIMIT query. HNSW has no such "empty bucket"
+-- failure mode and needs no row-count-dependent tuning.
+DROP INDEX IF EXISTS protocols_embedding_idx;
+CREATE INDEX protocols_embedding_idx
+    ON protocols USING hnsw (embedding vector_cosine_ops);
 """
 
 
@@ -39,7 +44,7 @@ def init_knowledge_base() -> None:
 
 def seed_protocols(protocols_dir: str = "samples/protocols") -> None:
     settings = get_settings()
-    bedrock = boto3.client("bedrock-runtime", region_name=settings.aws_region)
+    embedding_client = get_embedding_client(settings)
     protocols_path = Path(protocols_dir)
     if not protocols_path.exists():
         logger.warning("Protocols directory not found: %s", protocols_dir)
@@ -48,7 +53,7 @@ def seed_protocols(protocols_dir: str = "samples/protocols") -> None:
     with psycopg.connect(settings.checkpoint_database_url) as conn:
         for file in protocols_path.glob("*.json"):
             protocol = json.loads(file.read_text())
-            embedding = _embed(bedrock, settings, protocol["content"])
+            embedding = embedding_client.embed(protocol["content"])
             conn.execute(
                 """
                 INSERT INTO protocols (id, title, exception_type, content, embedding)
@@ -68,18 +73,3 @@ def seed_protocols(protocols_dir: str = "samples/protocols") -> None:
             )
         conn.commit()
     logger.info("Protocol knowledge base seeded from %s", protocols_dir)
-
-
-def _embed(bedrock_client, settings, text: str) -> list[float]:
-    response = bedrock_client.invoke_model(
-        modelId=settings.bedrock_embedding_model_id,
-        contentType="application/json",
-        accept="application/json",
-        body=json.dumps({
-            "inputText": text,
-            "dimensions": settings.embedding_dimensions,
-            "normalize": True,
-        }),
-    )
-    body = json.loads(response["body"].read())
-    return body["embedding"]

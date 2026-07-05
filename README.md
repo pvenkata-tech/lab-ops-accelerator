@@ -230,6 +230,8 @@ EMBEDDING_DIMENSIONS=1024
 
 Startup validation enforces all required fields — the service fails loudly at boot rather than serving wrong results silently. Switching `LLM_PROVIDER` is the only change required to move the reasoning model between Bedrock, Anthropic, Gemini, and OpenAI — every provider implements the same `invoke(system_prompt, user_message, max_tokens)` interface behind `get_llm_client()`, so `intake_classifier` and `exception_router` never branch on which model is serving traffic.
 
+Embeddings are configured separately via `EMBEDDING_PROVIDER` (`bedrock` | `local`), since RAG retrieval needs a vector for the protocol knowledge base regardless of which chat LLM is active. `bedrock` calls Titan embeddings for real semantic retrieval; `local` is a deterministic, non-semantic hashing stub with zero cloud dependency, meant for local development and the Docker Compose stack — protocol retrieval quality is not representative of production in that mode.
+
 ---
 
 ## 🚀 Deployment
@@ -281,18 +283,31 @@ IAM task roles are scoped to the specific Bedrock model IDs and RDS instance —
 ## 🧪 Testing
 
 ```bash
-# Unit + graph tests (no external dependencies)
+# Unit + node tests (no external dependencies, no Docker required)
 pytest tests/ -q
 
-# Integration tests (requires Docker Compose stack running)
-INTEGRATION=1 pytest tests/test_workflow_integration.py -q
+# E2E tests against a live local deployment (requires the Compose stack running)
+docker compose up --build -d
+E2E=1 pytest tests/test_e2e_docker.py -v
 ```
 
 | Test File | Coverage |
 |-----------|----------|
-| `test_exception_routing.py` | All exception categories; confidence threshold boundary cases; HITL trigger logic |
-| `test_workflow_integration.py` | End-to-end graph with patched Bedrock and pgvector; HITL interrupt/resume cycle |
+| `test_exception_routing.py` | All exception categories; confidence threshold boundary cases; HITL trigger logic in isolation |
+| `test_llm_parsing.py` | Stripping markdown code fences some LLMs wrap JSON responses in |
 | `test_eval_runner.py` | Eval runner against golden dataset fixture; asserts accuracy floor before any CI merge |
+| `test_e2e_docker.py` | Black-box HTTP tests against a running Docker Compose stack: health/readiness/metrics, request validation (422/404), a full process → pending_review → resume round trip through the real LangGraph + Postgres checkpointer, supervisor-override metric tracking, and Prometheus/Grafana reachability |
+
+`test_e2e_docker.py` is pure `httpx` + `pytest` (no imports from the app package), so it can run from any Python environment that can reach the stack's published ports — including a throwaway container via `host.docker.internal` if the host itself has no local Python:
+
+```bash
+docker run --rm -v "$(pwd)/tests:/app/tests" \
+  --add-host=host.docker.internal:host-gateway \
+  -e E2E=1 -e E2E_BASE_URL=http://host.docker.internal:8000 \
+  -e E2E_PROMETHEUS_URL=http://host.docker.internal:9090 \
+  -e E2E_GRAFANA_URL=http://host.docker.internal:3000 \
+  lab-ops-accelerator-accelerator python -m pytest tests/test_e2e_docker.py -v
+```
 
 ---
 

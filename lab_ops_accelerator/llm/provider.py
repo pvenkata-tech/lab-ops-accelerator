@@ -68,8 +68,11 @@ class AnthropicClient:
             system=system_prompt,
             messages=[{"role": "user", "content": user_message}],
         )
+        # Models with extended thinking enabled emit a ThinkingBlock before the
+        # TextBlock, so content[0] isn't reliably the text — find the text block.
+        text_block = next(block for block in response.content if block.type == "text")
         return LLMResponse(
-            text=response.content[0].text.strip(),
+            text=text_block.text.strip(),
             model_id=self.model_id,
             input_tokens=response.usage.input_tokens,
             output_tokens=response.usage.output_tokens,

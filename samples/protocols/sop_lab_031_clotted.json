@@ -1,0 +1,6 @@
+{
+  "id": "SOP-LAB-031",
+  "title": "Clotted Specimen",
+  "exception_type": "clotted",
+  "content": "A clot in an anticoagulated tube (EDTA, citrate, heparin) invalidates cell counts and coagulation results, and risks instrument clogging. Disposition: retest_required in all cases — a clotted specimen cannot be salvaged by re-mixing or re-centrifuging. Reject the specimen immediately and notify the collection site that proper tube inversion technique (8-10 gentle inversions immediately after draw) is required on recollection."
+}

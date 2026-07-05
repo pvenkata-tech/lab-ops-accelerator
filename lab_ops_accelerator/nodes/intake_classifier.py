@@ -6,6 +6,7 @@ import logging
 from lab_ops_accelerator.config import get_settings
 from lab_ops_accelerator.graph.state import ExceptionType, WorkflowState
 from lab_ops_accelerator.llm import get_llm_client
+from lab_ops_accelerator.llm.parsing import strip_code_fence
 
 logger = logging.getLogger(__name__)
 
@@ -48,10 +49,13 @@ def classify_intake(state: WorkflowState) -> WorkflowState:
     )
 
     client = get_llm_client(settings)
-    response = client.invoke(_SYSTEM_PROMPT, user_message, max_tokens=256)
+    # 1024, not 256: models with extended/adaptive thinking spend part of the
+    # token budget on hidden reasoning before the visible JSON answer, and a
+    # too-small budget truncates the JSON mid-object.
+    response = client.invoke(_SYSTEM_PROMPT, user_message, max_tokens=1024)
 
     try:
-        parsed = json.loads(response.text)
+        parsed = json.loads(strip_code_fence(response.text))
         exception_type = ExceptionType(parsed["exception_type"])
         reasoning = parsed.get("reasoning", "")
     except (json.JSONDecodeError, KeyError, ValueError) as exc:

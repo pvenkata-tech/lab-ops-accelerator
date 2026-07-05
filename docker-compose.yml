@@ -35,7 +35,7 @@ services:
 
   lims-mock:
     image: python:3.12-slim
-    command: >
+    command: |
       python -c "
       from http.server import HTTPServer, BaseHTTPRequestHandler
       import json
@@ -54,7 +54,7 @@ services:
 
   ehr-mock:
     image: python:3.12-slim
-    command: >
+    command: |
       python -c "
       from http.server import HTTPServer, BaseHTTPRequestHandler
       import json

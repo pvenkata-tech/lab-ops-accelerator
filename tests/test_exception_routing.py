@@ -9,9 +9,11 @@ from lab_ops_accelerator.graph.state import (
     Disposition,
     ExceptionType,
     SpecimenEvent,
+    SupervisorDecision,
     WorkflowState,
 )
 from lab_ops_accelerator.nodes.exception_router import route_exception
+from lab_ops_accelerator.nodes.human_review import human_review
 from lab_ops_accelerator.nodes.intake_classifier import classify_intake
 
 
@@ -112,10 +114,12 @@ class TestExceptionRouter:
             "qc_flags": [],
         })
         with patch("boto3.client", return_value=_mock_bedrock_route("escalate", 0.55)):
-            with patch("lab_ops_accelerator.nodes.exception_router.interrupt"):
-                result = route_exception(state)
+            result = route_exception(state)
         assert result.requires_human_review is True
         assert result.confidence == 0.55
+        # route_exception itself must never call interrupt() directly — it isn't run
+        # inside a compiled graph here, so an uncaught interrupt would raise instead
+        # of returning. HITL pausing is human_review's job, not the router's.
 
     def test_confidence_at_exact_threshold_does_not_trigger_hitl(self):
         state = _make_state()
@@ -128,3 +132,29 @@ class TestExceptionRouter:
         with patch("boto3.client", return_value=_mock_bedrock_route("retest_required", 0.80)):
             result = route_exception(state)
         assert result.requires_human_review is False
+
+
+class TestHumanReview:
+    def test_pauses_with_recommendation_payload(self):
+        state = _make_state()
+        state = state.model_copy(update={
+            "exception_type": ExceptionType.HEMOLYSIS,
+            "protocol_id": "SOP-LAB-012",
+            "recommended_disposition": Disposition.ESCALATE,
+            "confidence": 0.55,
+            "routing_reasoning": "ambiguous grade",
+        })
+        supervisor_payload = {
+            "decision": "reject",
+            "rationale": "supervisor override",
+            "reviewer_id": "sup-01",
+        }
+        with patch("lab_ops_accelerator.nodes.human_review.interrupt", return_value=supervisor_payload) as mock_interrupt:
+            result = human_review(state)
+
+        mock_interrupt.assert_called_once()
+        interrupt_payload = mock_interrupt.call_args[0][0]
+        assert interrupt_payload["agent_recommendation"] == "escalate"
+        assert interrupt_payload["confidence"] == 0.55
+
+        assert result.supervisor_decision == SupervisorDecision(**supervisor_payload)

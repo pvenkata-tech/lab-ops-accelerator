@@ -1,0 +1,6 @@
+{
+  "id": "SOP-LAB-071",
+  "title": "Labeling Error",
+  "exception_type": "labeling_error",
+  "content": "Any mismatch between the specimen label and the order (missing patient identifier, illegible label, two-identifier mismatch, or unlabeled tube) is a patient-safety issue and must never be resolved by relabeling in the lab. Disposition: reject with no retest performed until the collection site confirms patient identity and provides a correctly labeled specimen. This category should always be escalated to a supervisor rather than auto-dispositioned, regardless of model confidence, because a mislabel carries wrong-patient-result risk that outweighs turnaround-time considerations."
+}

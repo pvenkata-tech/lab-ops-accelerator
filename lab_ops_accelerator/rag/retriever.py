@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import json
 import logging
 
-import boto3
 import psycopg
 
 from lab_ops_accelerator.config import get_settings
+from lab_ops_accelerator.rag.embeddings import get_embedding_client
 
 logger = logging.getLogger(__name__)
 
@@ -14,20 +13,7 @@ logger = logging.getLogger(__name__)
 def retrieve_protocol(query: str) -> dict:
     """Retrieve the most relevant handling protocol for a given query."""
     settings = get_settings()
-    bedrock = boto3.client("bedrock-runtime", region_name=settings.aws_region)
-
-    response = bedrock.invoke_model(
-        modelId=settings.bedrock_embedding_model_id,
-        contentType="application/json",
-        accept="application/json",
-        body=json.dumps({
-            "inputText": query,
-            "dimensions": settings.embedding_dimensions,
-            "normalize": True,
-        }),
-    )
-    body = json.loads(response["body"].read())
-    query_embedding = body["embedding"]
+    query_embedding = get_embedding_client(settings).embed(query)
 
     with psycopg.connect(settings.checkpoint_database_url, connect_timeout=5) as conn:
         row = conn.execute(

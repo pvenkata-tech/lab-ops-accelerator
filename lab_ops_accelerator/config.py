@@ -16,6 +16,13 @@ class LLMProviderName(str, Enum):
     OPENAI = "openai"
 
 
+class EmbeddingProviderName(str, Enum):
+    """Which backend serves protocol/query embeddings for RAG retrieval."""
+
+    BEDROCK = "bedrock"
+    LOCAL = "local"
+
+
 class Settings(BaseSettings):
     # LLM provider selection — reasoning model backend
     llm_provider: LLMProviderName = LLMProviderName.BEDROCK
@@ -25,6 +32,11 @@ class Settings(BaseSettings):
     bedrock_claude_model_id: str = "us.anthropic.claude-sonnet-5"
     bedrock_embedding_model_id: str = "amazon.titan-embed-text-v2:0"
     embedding_dimensions: int = 1024
+
+    # Embedding provider — separate from llm_provider because embeddings are only
+    # available from Bedrock in production; `local` is a deterministic offline stub
+    # for development/testing without AWS credentials.
+    embedding_provider: EmbeddingProviderName = EmbeddingProviderName.BEDROCK
 
     # Anthropic — native API (bypasses Bedrock)
     anthropic_api_key: str = ""

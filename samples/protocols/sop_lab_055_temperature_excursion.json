@@ -1,0 +1,6 @@
+{
+  "id": "SOP-LAB-055",
+  "title": "Temperature Excursion in Transit",
+  "exception_type": "temperature_excursion",
+  "content": "Specimens requiring cold-chain transport (2-8°C) that arrive outside the validated range may have degraded analyte stability. If the excursion is brief (under 2 hours, confirmed via cold-chain logger) and the test is stable at ambient temperature per the assay insert, accept_with_notation. If the excursion is prolonged, the temperature is unknown, or the test is known to be temperature-sensitive (e.g. certain coagulation factors, ammonia), reject and require retest with proper cold-chain packaging. Escalate to the lab director if the ordering site has a pattern of repeated excursions."
+}

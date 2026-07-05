@@ -1,0 +1,6 @@
+{
+  "id": "SOP-LAB-062",
+  "title": "Specimen Contamination",
+  "exception_type": "contamination",
+  "content": "Contamination (e.g. IV fluid dilution, foreign material, microbial overgrowth on a culture specimen collected without sterile technique) compromises result validity in ways that cannot be reliably corrected post-collection. Disposition: reject in most cases with no retest indicated only when the contamination source itself makes any near-term recollection equally unreliable (e.g. active IV infusion at the only accessible draw site) — otherwise retest_required once the contamination source is addressed. Contaminated culture specimens should always be escalated to microbiology for a collection-technique review before recollection is scheduled."
+}
